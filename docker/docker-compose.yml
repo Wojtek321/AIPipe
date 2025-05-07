@@ -1,0 +1,49 @@
+services:
+  fastapi:
+    container_name: flask_app
+    build:
+      context: ..
+      dockerfile: /docker/app/Dockerfile
+    ports:
+      - "8000:8000"
+#    environment:
+#      - REDIS_URL=redis://redis:6379/0
+#      - RABBITMQ_URL=pyamqp://guest@rabbitmq:5672//
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+      - redis
+
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  redis:
+    image: redis:7.4.3
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/worker/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - rabbitmq
+
+  flower:
+    image: mher/flower:2.0
+    container_name: flower
+    command: celery --broker=pyamqp://guest@rabbitmq// flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - rabbitmq

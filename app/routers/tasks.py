@@ -1,15 +1,33 @@
 from fastapi import APIRouter, HTTPException
-from worker.tasks import summarize
+from worker.tasks import summarize, translate
+from pydantic import BaseModel
+from typing import Literal
 
 router = APIRouter(
     prefix='/tasks'
 )
 
 
-@router.get('/summarize')
-def summarize_text(text: str, model: str = "gpt"):
-    if model not in ['gpt', 'claude', 'local']:
-        return HTTPException(status_code=400, detail='Invalid model type')
+class BaseTaskRequest(BaseModel):
+    text: str
+    model: Literal['gpt'] = 'gpt'
 
-    task = summarize.delay(text, model)
+
+class SummarizeRequest(BaseTaskRequest):
+    pass
+
+
+class TranslateRequest(BaseTaskRequest):
+    target_language: str
+
+
+@router.post('/summarize')
+def summarize_text(request: SummarizeRequest):
+    task = summarize.delay(request.text, request.model)
+    return {'task_id': task.id}
+
+
+@router.post('/translate')
+def translate_text(request: TranslateRequest):
+    task = translate.delay(request.text, request.target_language, request.model)
     return {'task_id': task.id}

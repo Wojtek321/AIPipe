@@ -5,7 +5,7 @@ client = OpenAI()
 
 
 @app.task
-def translate(text: str, target_language: str, model: str):
+def translate(text: str, target_language: str, model: str = None, pipeline_id: str = None):
     SYSTEM_PROMPT = (
         f"You are a professional translation assistant. Translate the given text accurately and fluently into {target_language}. "
         "Preserve the original meaning, tone, and style of the text. Do not add or omit any information. "

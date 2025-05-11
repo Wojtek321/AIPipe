@@ -3,3 +3,4 @@ fastapi==0.115.12
 celery==5.5.2
 redis==5.2.1
 openai==1.55.3
+redis==5.2.1

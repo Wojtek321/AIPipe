@@ -5,11 +5,11 @@ client = OpenAI()
 
 
 @app.task
-def summarize(text: str, model: str):
+def summarize(text: str, model: str = None, pipeline_id: str = None):
     SYSTEM_PROMPT = (
         "You are a summarization assistant. Your task is to generate clear, concise, and well-structured summaries. "
-        "Preserve all key information, main points, and important details, while removing redundant or non-essential content. "
-        "Maintain logical flow and clarity throughout the summary."
+        "Focus on reducing the original text length while preserving all key information, main points, and critical details. "
+        "Remove redundancies, examples, and non-essential elaborations. Maintain a logical flow and ensure clarity throughout the summary."
     )
 
     completion = client.chat.completions.create(

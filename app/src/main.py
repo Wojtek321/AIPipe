@@ -1,18 +1,11 @@
 from fastapi import FastAPI
-from routers import pipelines, tasks, utils
+from app.src import pipelines, tasks
 import uvicorn
 
 app = FastAPI()
 
-
 app.include_router(pipelines.router)
 app.include_router(tasks.router)
-app.include_router(utils.router)
-
-
-@app.get("/")
-def root():
-    return {"message": "root"}
 
 
 if __name__ == "__main__":

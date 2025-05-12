@@ -12,4 +12,4 @@ COPY ../worker ./worker
 
 EXPOSE 8000
 
-CMD ["python", "app/main.py"]
+CMD ["python", "app/src/main.py"]

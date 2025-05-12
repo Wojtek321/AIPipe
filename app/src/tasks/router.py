@@ -1,37 +1,13 @@
-from fastapi import APIRouter, HTTPException
-from worker.tasks import summarize, translate, rewrite
-from worker.celery import app
+from fastapi import APIRouter
 from celery.result import AsyncResult
-from pydantic import BaseModel
-from typing import Literal
+
+from worker.celery import app
+from worker.tasks import summarize, rewrite, translate
+from .schemas import (SummarizeRequest, RewriteRequest, TranslateRequest, TaskStatusResponse)
 
 router = APIRouter(
     prefix='/tasks'
 )
-
-
-class BaseTaskRequest(BaseModel):
-    text: str
-    model: Literal['gpt'] = 'gpt'
-
-
-class SummarizeRequest(BaseTaskRequest):
-    pass
-
-
-class TranslateRequest(BaseTaskRequest):
-    target_language: str
-
-
-class RewriteRequest(BaseTaskRequest):
-    pass
-
-
-class TaskStatusResponse(BaseModel):
-    task_id: str
-    state: str
-    result: str | None = None
-    error: str | None = None
 
 
 @router.get('/{task_id}', response_model=TaskStatusResponse)

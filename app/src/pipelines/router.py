@@ -1,40 +1,16 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from worker.tasks import summarize, translate, rewrite
-from worker.celery import app
-from celery.result import AsyncResult
+from fastapi import APIRouter
 from redis import Redis
 import uuid
 import json
+
+from .utils import get_task_by_name, get_pipeline_status
+from .schemas import PipelineCreateRequest, PipelineStatusResponse
 
 router = APIRouter(
     prefix='/pipelines'
 )
 
 redis_instance = Redis.from_url('redis://redis:6379/1')
-
-
-class StepDefinition(BaseModel):
-    name: str
-    params: dict[str, str] = {}
-    task_id: str | None = None
-
-
-class PipelineCreateRequest(BaseModel):
-    steps: list[StepDefinition]
-    input_data: str
-
-
-class StepStatus(BaseModel):
-    task_id: str
-    state: str
-
-
-class PipelineStatusResponse(BaseModel):
-    pipeline_id: str
-    input_data: str
-    steps: list[StepStatus]
-    result: str | None = None
 
 
 @router.post('/', response_model=PipelineStatusResponse)
@@ -80,35 +56,3 @@ def get_pipeline_result(pipeline_id: str):
         steps=steps,
         result=result
     )
-
-
-def get_pipeline_status(pipeline_id: str):
-    pipeline = redis_instance.hgetall(f'pipeline:{pipeline_id}')
-
-    if not pipeline:
-        raise HTTPException(status_code=404, detail='Pipeline not found')
-
-    pipeline = {k.decode(): v.decode() for k, v in pipeline.items()}
-    tasks_ids = json.loads(pipeline['tasks'])
-
-    steps = []
-    final_result = None
-
-    for i, task_id in enumerate(tasks_ids):
-        result = AsyncResult(task_id, app=app)
-        steps.append(StepStatus(task_id=task_id, state=result.state))
-
-        if i == len(tasks_ids) - 1 and result.successful():
-            final_result = result.result
-
-    return pipeline['input_data'], steps, final_result
-
-
-def get_task_by_name(name: str):
-    mapping = {
-        'summarize': summarize,
-        'translate': translate,
-        'rewrite': rewrite,
-    }
-
-    return mapping[name]

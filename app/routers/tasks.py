@@ -27,7 +27,14 @@ class RewriteRequest(BaseTaskRequest):
     pass
 
 
-@router.get('/{task_id}')
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    state: str
+    result: str | None = None
+    error: str | None = None
+
+
+@router.get('/{task_id}', response_model=TaskStatusResponse)
 def get_task_result(task_id: str):
     result = AsyncResult(task_id, app=app)
 
@@ -44,19 +51,19 @@ def get_task_result(task_id: str):
     return response
 
 
-@router.post('/summarize')
+@router.post('/summarize', response_model=TaskStatusResponse)
 def summarize_text(request: SummarizeRequest):
     task = summarize.delay(request.text, request.model)
     return {'task_id': task.id, 'state': task.state}
 
 
-@router.post('/translate')
+@router.post('/translate', response_model=TaskStatusResponse)
 def translate_text(request: TranslateRequest):
     task = translate.delay(request.text, request.target_language, request.model)
     return {'task_id': task.id, 'state': task.state}
 
 
-@router.post('/rewrite')
+@router.post('/rewrite', response_model=TaskStatusResponse)
 def rewrite_text(request: RewriteRequest):
     task = rewrite.delay(request.text, request.model)
     return {'task_id': task.id, 'state': task.state}

@@ -6,12 +6,20 @@ import json
 from worker.tasks import summarize, rewrite, translate
 from worker.celery import app
 from .schemas import StepStatus
+from .constants import PIPELINE_REDIS_PREFIX
 
-redis_instance = Redis.from_url('redis://redis:6379/1')
+
+def save_pipeline_to_redis(pipeline_id: str, input_data: str, task_ids: list[str], redis_instance: Redis):
+    key = f'{PIPELINE_REDIS_PREFIX}{pipeline_id}'
+
+    redis_instance.hset(key, mapping={
+        'input_data': input_data,
+        'tasks': json.dumps(task_ids)
+    })
 
 
-def get_pipeline_status(pipeline_id: str):
-    pipeline = redis_instance.hgetall(f'pipeline:{pipeline_id}')
+def get_pipeline_status(pipeline_id: str, redis_instance: Redis):
+    pipeline = redis_instance.hgetall(f'{PIPELINE_REDIS_PREFIX}{pipeline_id}')
 
     if not pipeline:
         raise HTTPException(status_code=404, detail='Pipeline not found')

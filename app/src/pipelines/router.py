@@ -1,20 +1,18 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from redis import Redis
 import uuid
-import json
 
-from .utils import get_task_by_name, get_pipeline_status
+from .utils import save_pipeline_to_redis, get_pipeline_status, get_task_by_name
 from .schemas import PipelineCreateRequest, PipelineStatusResponse
+from .dependencies import get_redis
 
 router = APIRouter(
     prefix='/pipelines'
 )
 
-redis_instance = Redis.from_url('redis://redis:6379/1')
-
 
 @router.post('/', response_model=PipelineStatusResponse)
-def create_pipeline(request: PipelineCreateRequest):
+def create_pipeline(request: PipelineCreateRequest, redis_instance: Redis = Depends(get_redis)):
     pipeline_id = str(uuid.uuid4())
     s = None
 
@@ -31,28 +29,26 @@ def create_pipeline(request: PipelineCreateRequest):
 
     s.delay()
 
-    redis_instance.hset(f'pipeline:{pipeline_id}', mapping={
-        'input_data': request.input_data,
-        'tasks': json.dumps([step.task_id for step in request.steps])
-    })
+    task_ids = [step.task_id for step in request.steps]
+    save_pipeline_to_redis(pipeline_id, request.input_data, task_ids, redis_instance)
 
-    input_data, steps, result = get_pipeline_status(pipeline_id)
+    input_data, steps, result = get_pipeline_status(pipeline_id, redis_instance)
 
-    return PipelineStatusResponse(
-        pipeline_id=pipeline_id,
-        input_data=input_data,
-        steps=steps,
-        result=result
-    )
+    return {
+        'pipeline_id': pipeline_id,
+        'input_data': input_data,
+        'steps': steps,
+        'result': result,
+    }
 
 
 @router.get('/{pipeline_id}', response_model=PipelineStatusResponse)
-def get_pipeline_result(pipeline_id: str):
-    input_data, steps, result = get_pipeline_status(pipeline_id)
+def get_pipeline_result(pipeline_id: str, redis_instance: Redis = Depends(get_redis)):
+    input_data, steps, result = get_pipeline_status(pipeline_id, redis_instance)
 
-    return PipelineStatusResponse(
-        pipeline_id=pipeline_id,
-        input_data=input_data,
-        steps=steps,
-        result=result
-    )
+    return {
+        'pipeline_id': pipeline_id,
+        'input_data': input_data,
+        'steps': steps,
+        'result': result,
+    }

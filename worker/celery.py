@@ -1,11 +1,6 @@
 from celery import Celery
+from worker import celeryconfig
 
 
-app = Celery(__name__,
-             broker='pyamqp://guest@rabbitmq//',
-             backend='redis://redis:6379/0',
-             include=['worker.tasks'])
-
-app.conf.update(
-    result_expires=3600,
-)
+app = Celery(__name__)
+app.config_from_object(celeryconfig)

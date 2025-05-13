@@ -5,7 +5,7 @@ client = OpenAI()
 
 
 @app.task
-def summarize(text: str, model: str = None, pipeline_id: str = None):
+def summarize(text: str, model: str = None):
     SYSTEM_PROMPT = (
         "You are a summarization assistant. Your task is to generate clear, concise, and well-structured summaries. "
         "Focus on reducing the original text length while preserving all key information, main points, and critical details. "

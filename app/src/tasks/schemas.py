@@ -19,6 +19,10 @@ class RewriteRequest(BaseTaskRequest):
     pass
 
 
+class ExpandRequest(BaseTaskRequest):
+    pass
+
+
 class TaskStatusResponse(BaseModel):
     task_id: str
     state: str

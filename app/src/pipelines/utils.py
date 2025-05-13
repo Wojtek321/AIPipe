@@ -3,7 +3,7 @@ from celery.result import AsyncResult
 from redis import Redis
 import json
 
-from worker.tasks import summarize, rewrite, translate
+from worker.tasks import summarize, rewrite, translate, expand
 from worker.celery import app
 from .schemas import StepStatus
 from .constants import PIPELINE_REDIS_PREFIX
@@ -45,6 +45,7 @@ def get_task_by_name(name: str):
         'summarize': summarize,
         'translate': translate,
         'rewrite': rewrite,
+        'expand': expand,
     }
 
     return mapping[name]
